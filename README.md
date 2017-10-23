@@ -12,8 +12,22 @@ dig @localhost -p 53 hostname
 
 ## How to run
 '''
-# Run local
-docker run -d -p 53 -p 53/udp -v $PWD/conf:/etc/rubydns coder4/rubydns
-# Run as service
-docker service --name rubydns coder4/rubydns
+# Run docker as file mode
+docker run \
+    -p 53:53 \
+    -p 53:53/udp \
+    --volume $PWD/conf:/etc/rubydns \
+    --env RUN_MODE=file \
+    --detach \
+    coder4/rubydns
+
+# Run docker as rest mode
+docker run \
+    -p 53:53 \
+    -p 53:53/udp \
+    --env RUN_MODE=rest \
+    --env REST_URL=http://192.168.99.100/container/list \
+    --env IP_PREFIX=10. \
+    --detach \
+    coder4/rubydns
 '''

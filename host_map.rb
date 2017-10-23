@@ -14,6 +14,7 @@ module HostMap
   end
 
   def schd_load(list_container_url, prefix, sleep_sec)
+    @hostmap = Hash.new()
     Thread.new {
       while true
         begin
@@ -26,9 +27,10 @@ module HostMap
           end
           # update map & sleep
           @hostmap = hostmap_new 
-          sleep sleep_sec
         rescue Exception => e
           puts e
+        ensure
+          sleep sleep_sec
         end
       end
     }

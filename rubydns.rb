@@ -5,7 +5,6 @@ require './host_map'
 
 include HostMap
 
-
 # opt define
 options = {:mode => "file"}
 opts = OptionParser.new do |opts|

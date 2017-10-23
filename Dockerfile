@@ -8,11 +8,10 @@ RUN bundle install --verbose
 
 EXPOSE 53 53/udp
 
-RUN mkdir /etc/rubydns
-COPY hosts /etc/rubydns
-
-RUN mkdir /app
+RUN mkdir /etc/rubydns /app
 WORKDIR /app
 
-COPY rubydns.rb ./
-CMD bundle exec ./rubydns.rb
+COPY conf/hosts /etc/rubydns
+COPY ./rubydns.rb ./host_map.rb ./run_docker.sh ./ 
+# Use env param RUN_MODE & (Optional if mode is rest, REST_API) & (Optional if mode is rest, IP_PREFIX)
+CMD ./run_docker.sh
