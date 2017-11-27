@@ -17,15 +17,16 @@ docker run \
     -p 53:53 \
     -p 53:53/udp \
     --volume $PWD/conf:/etc/rubydns \
-    --env RUN_MODE=file \
+    --env HOSTS=/etc/rubydns/hosts \
     --detach \
     coder4/rubydns
 
-# Run docker as rest mode
+# Run docker as file & rest mode
 docker run \
     -p 53:53 \
     -p 53:53/udp \
-    --env RUN_MODE=rest \
+    --volume $PWD/conf:/etc/rubydns \
+    --env HOSTS=/etc/rubydns/hosts \
     --env REST_URL=http://192.168.99.100/container/list \
     --env IP_PREFIX=10. \
     --detach \
