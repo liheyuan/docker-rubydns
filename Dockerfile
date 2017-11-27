@@ -13,5 +13,5 @@ WORKDIR /app
 
 COPY conf/hosts /etc/rubydns
 COPY ./rubydns.rb ./host_map.rb ./run_docker.sh ./ 
-# Use env param RUN_MODE & (Optional if mode is rest, REST_API) & (Optional if mode is rest, IP_PREFIX)
+# Use env param REST_URL / IP_PREFIX / UPSTREAM / HOSTS
 CMD ./run_docker.sh

@@ -1,18 +1,23 @@
 #!/bin/sh
 
-if [ x"$RUN_MODE" == x"file" ]; then
-    bundle exec ./rubydns.rb -m file
-elif [ x"$RUN_MODE" == x"rest" ]; then
-    if [ x"$REST_URL" == x"" ];then
-        echo "invalid ENV_PARAM REST_URL"
-    else
-        EXTRA_PARAM=""
-        if [ x"$IP_PREFIX" != x"" ];then
-            EXTRA_PARAM=" -p $IP_PREFIX"
-        fi
-        bundle exec ./rubydns.rb -m rest -u $REST_URL $EXTRA_PARAM
-    fi
-else
-    echo "invalid ENV_PARAM RUN_MODE"
-    exit -1
+HOSTS_PARAM=""
+if [ x"$HOSTS" != x"" ];
+    HOSTS_PARAM = " -t $HOSTS"
 fi
+
+UPSTREAM_PARAM=""
+if [ x"$UPSTREAM" != x"" ];
+    UPSTREAM_PARAM = " -s $UPSTREAM"
+fi
+
+REST_URL_PARAM=""
+if [ x"$REST_URL" != x"" ];
+    REST_URL_PARAM = " -u $REST_URL"
+fi
+
+IP_PREFIX_PARAM=""
+if [ x"$IP_PREFIX" != x"" ];
+    IP_PREFIX_PARAM = " -p $IP_PREFIX"
+fi
+
+bundle exec ./rubydns.rb $HOSTS_PARAM $UPSTREAM_PARAM $REST_URL_PARAM $IP_PREFIX_PARAM

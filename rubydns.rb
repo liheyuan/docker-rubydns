@@ -6,13 +6,14 @@ require './host_map'
 include HostMap
 
 # opt define
-options = {:mode => "file"}
+options = {}
 opts = OptionParser.new do |opts|
   opts.banner = "Usage: rubydns.rb [options]"
 
-  opts.on('-m', '--mode MODE', [:file, :rest], 'file/rest custom dns entry mode') { |v| options[:mode] = v }
-  opts.on('-u', '--url URL', 'optional for file mode, valid on rest mode only, rest url for update dns entry, please use ip as host') { |v| options[:url] = v }
-  opts.on('-p', '--prefix PREFIX', 'optional, valid on rest mode only, ip prefix filter') { |v| options[:prefix] = v }
+  opts.on('-t', '--hosts HOSTS', 'optional , extra host file location') { |v| options[:hosts] = v }
+  opts.on('-u', '--url URL', 'optional, rest url for update dns entry, please use ip as host') { |v| options[:url] = v }
+  opts.on('-p', '--prefix PREFIX', 'optional, ip prefix filter, valid only with url') { |v| options[:prefix] = v }
+  opts.on('-s', '--upstream UPSTREAM', 'optional, upstream dns server') { |v| options[:upstream] = v }
   opts.on('-h', '--help', 'Displays Help') { puts opts; exit }
 
 end
@@ -26,24 +27,20 @@ end
 # parse
 begin
   opts.parse!
-  REST_MODE = (options[:mode].to_s == "rest")
-  opt_exit(opts) if REST_MODE and not options[:url]
 rescue
   opt_exit(opts)
 end
 
 # Config
-LIST_CONTAINER_URL = options[:url] if REST_MODE 
+LIST_CONTAINER_URL = options[:url]
 CONTAINER_IP_PREFIX = options[:prefix] 
-HOST_FILE = '/etc/rubydns/hosts'
+UPSTREAM_DNS = options[:upstream]
+HOST_FILE = options[:hosts] 
 SLEEP_SECS = 10 
 
-# Entry load mode select
-if REST_MODE
-  HostMap::schd_load(LIST_CONTAINER_URL, CONTAINER_IP_PREFIX, SLEEP_SECS)
-else
-  HostMap::file_load(HOST_FILE)
-end
+# Entry load hostfile and restentry
+HostMap::schd_load(LIST_CONTAINER_URL, CONTAINER_IP_PREFIX, SLEEP_SECS) if LIST_CONTAINER_URL
+HostMap::file_load(HOST_FILE) if HOST_FILE
 
 # Bind dns
 INTERFACES = [
@@ -54,18 +51,22 @@ INTERFACES = [
 IN = Resolv::DNS::Resource::IN
 
 # Use upstream DNS for name resolution.
-UPSTREAM = RubyDNS::Resolver.new([[:udp, "8.8.8.8", 53], [:tcp, "8.8.8.8", 53]])
+UPSTREAM = UPSTREAM_DNS ? RubyDNS::Resolver.new([[:udp, UPSTREAM_DNS, 53], [:tcp, UPSTREAM_DNS, 53]]) : nil
 
 # Start the RubyDNS server
 RubyDNS::run_server(INTERFACES) do
-  puts IN::A
   match(/(.*)/, IN::A) do |transaction, host|
-    ip = HostMap::hostmap[host.to_s]
-    transaction.respond!(ip) if ip
+    host_str = host.to_s
+    ip = HostMap::locate_ip(host_str)
+    if ip
+      transaction.respond!(ip)
+    else
+      transaction.passthrough!(UPSTREAM) if UPSTREAM
+    end
   end
 
   # Default DNS handler
   otherwise do |transaction|
-    transaction.passthrough!(UPSTREAM)
+    transaction.passthrough!(UPSTREAM) if UPSTREAM
   end
 end
